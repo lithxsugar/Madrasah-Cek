@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Madrasah Cek</title>
+  <meta name="description" content="Madrasah Cek - Aplikasi survei kerusakan bangunan Madrasah">
+  <meta name="theme-color" content="#047857">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header id="appHeader">
+    <div class="header-content">
+      <div class="header-left">
+        <button id="backToHomeBtn" class="header-btn" style="display:none" aria-label="Kembali">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1>🕌 Madrasah Cek</h1>
+          <p class="subtitle" id="headerSubtitle">Pendataan Kerusakan Bangunan</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HOME SCREEN -->
+  <div id="homeScreen">
+    <div class="home-hero">
+      <div class="hero-icon">🏫</div>
+      <h2>Madrasah Cek</h2>
+      <p>Buat survei baru atau kelola data survei yang sudah ada</p>
+      <button id="newSurveyBtn" class="btn-primary btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Buat Survei Baru
+      </button>
+    </div>
+    <div id="surveyList" class="survey-list"></div>
+  </div>
+
+  <!-- SURVEY FORM (single continuous page) -->
+  <div id="surveyForm" style="display:none">
+
+    <!-- 1. Identitas -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">1</span> Identitas Madrasah</h2>
+      <div class="form-grid">
+        <div class="form-group full"><label for="namaMadrasah">Nama Madrasah <span class="req">*</span></label><input
+            type="text" id="namaMadrasah" placeholder="MI/MTs/MA ..." required></div>
+        <div class="form-group"><label for="npsn">NPSN</label><input type="text" id="npsn"
+            placeholder="Nomor Pokok Sekolah Nasional" inputmode="numeric"></div>
+        <div class="form-group"><label for="nsm">NSM</label><input type="text" id="nsm"
+            placeholder="Nomor Statistik Madrasah" inputmode="numeric"></div>
+        <div class="form-group full"><label for="alamat">Alamat Lengkap <span class="req">*</span></label><textarea
+            id="alamat" rows="2" placeholder="Jalan, RT/RW, Desa/Kelurahan" required></textarea></div>
+        <div class="form-group"><label for="kecamatan">Kecamatan</label><input type="text" id="kecamatan"
+            placeholder="Kecamatan"></div>
+        <div class="form-group"><label for="kabupaten">Kabupaten/Kota</label><input type="text" id="kabupaten"
+            placeholder="Kabupaten/Kota"></div>
+        <div class="form-group"><label for="provinsi">Provinsi</label><input type="text" id="provinsi"
+            placeholder="Provinsi"></div>
+        <div class="form-group"><label for="jenjang">Jenjang</label>
+          <select id="jenjang">
+            <option value="">-- Pilih --</option>
+            <option value="RA">RA</option>
+            <option value="MI">MI</option>
+            <option value="MTs">MTs</option>
+            <option value="MA">MA</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Data Lahan -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">2</span> Data Lahan</h2>
+      <div class="form-grid">
+        <div class="form-group"><label for="statusSertifikat">Status Sertifikat</label>
+          <select id="statusSertifikat" onchange="toggleLainnya('statusSertifikat','statusSertifikatBox')">
+            <option value="">-- Pilih --</option>
+            <option value="ada">Ada / Sudah Bersertifikat</option>
+            <option value="proses">Dalam Proses</option>
+            <option value="belum">Belum Ada</option>
+            <option value="lainnya">Lainnya (Tulis Sendiri)</option>
+          </select>
+        </div>
+        <div class="form-group" id="statusSertifikatBox" style="display:none"><label>Tulis Status</label><input
+            type="text" id="statusSertifikatCustom" placeholder="Ketik status sertifikat..."></div>
+        <div class="form-group"><label for="nomorSertifikat">Nomor Sertifikat</label><input type="text"
+            id="nomorSertifikat" placeholder="Nomor sertifikat tanah"></div>
+        <div class="form-group full"><label for="ketSertifikat">Keterangan Sertifikat</label><textarea
+            id="ketSertifikat" rows="2" placeholder="Keterangan tambahan tentang sertifikat..."></textarea></div>
+
+        <div class="form-group"><label for="luasLahan">Luas Lahan (m²)</label><input type="number" id="luasLahan"
+            placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="form-group"><label for="luasBangunan">Luas Bangunan (m²)</label><input type="number"
+            id="luasBangunan" placeholder="0" min="0" inputmode="numeric"></div>
+
+        <div class="form-group"><label for="statusTanah">Status Kepemilikan Tanah</label>
+          <select id="statusTanah" onchange="toggleLainnya('statusTanah','statusTanahBox')">
+            <option value="">-- Pilih --</option>
+            <option value="milik">Milik Sendiri</option>
+            <option value="wakaf">Wakaf</option>
+            <option value="sewa">Sewa/Pinjam</option>
+            <option value="pemerintah">Milik Pemerintah</option>
+            <option value="lainnya">Lainnya (Tulis Sendiri)</option>
+          </select>
+        </div>
+        <div class="form-group" id="statusTanahBox" style="display:none"><label>Tulis Status</label><input type="text"
+            id="statusTanahCustom" placeholder="Ketik status kepemilikan..."></div>
+        <div class="form-group full"><label for="ketTanah">Keterangan Kepemilikan</label><textarea id="ketTanah"
+            rows="2" placeholder="Keterangan tambahan tentang kepemilikan tanah..."></textarea></div>
+        <div class="form-group"><label for="tahunBerdiri">Tahun Berdiri</label><input type="number" id="tahunBerdiri"
+            placeholder="cth: 1995" min="1900" max="2030" inputmode="numeric"></div>
+      </div>
+    </section>
+
+    <!-- 3. Data Pokok -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">3</span> Data Pokok</h2>
+      <div class="form-grid">
+        <div class="form-group"><label for="jumlahSiswa">Jumlah Siswa <span class="req">*</span></label><input
+            type="number" id="jumlahSiswa" placeholder="Total siswa" min="0" inputmode="numeric"></div>
+        <div class="form-group full"><label class="toggle-label"><input type="checkbox" id="showSiswaDetail"
+              onchange="toggleDetail('siswaDetailBox')"> Rincian Laki-laki / Perempuan</label></div>
+        <div id="siswaDetailBox" class="detail-box" style="display:none">
+          <div class="form-group"><label for="siswaL">Siswa Laki-laki</label><input type="number" id="siswaL"
+              placeholder="0" min="0" inputmode="numeric"></div>
+          <div class="form-group"><label for="siswaP">Siswa Perempuan</label><input type="number" id="siswaP"
+              placeholder="0" min="0" inputmode="numeric"></div>
+        </div>
+
+        <div class="form-group"><label for="jumlahGuru">Jumlah Guru <span class="req">*</span></label><input
+            type="number" id="jumlahGuru" placeholder="Total guru" min="0" inputmode="numeric"></div>
+        <div class="form-group full"><label class="toggle-label"><input type="checkbox" id="showGuruDetail"
+              onchange="toggleDetail('guruDetailBox')"> Rincian PNS / Non-PNS</label></div>
+        <div id="guruDetailBox" class="detail-box" style="display:none">
+          <div class="form-group"><label for="guruPNS">Guru PNS</label><input type="number" id="guruPNS" placeholder="0"
+              min="0" inputmode="numeric"></div>
+          <div class="form-group"><label for="guruNonPNS">Guru Non-PNS</label><input type="number" id="guruNonPNS"
+              placeholder="0" min="0" inputmode="numeric"></div>
+        </div>
+
+        <div class="form-group"><label for="rombel">Jumlah Rombongan Belajar</label><input type="number" id="rombel"
+            placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="form-group"><label for="ruangKelas">Jumlah Ruang Kelas</label><input type="number" id="ruangKelas"
+            placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="form-group"><label for="ruangKelasBaik">Ruang Kelas Baik</label><input type="number"
+            id="ruangKelasBaik" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="form-group"><label for="ruangKelasRusakRingan">Rusak Ringan</label><input type="number"
+            id="ruangKelasRusakRingan" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="form-group"><label for="ruangKelasRusakBerat">Rusak Berat</label><input type="number"
+            id="ruangKelasRusakBerat" placeholder="0" min="0" inputmode="numeric"></div>
+      </div>
+    </section>
+
+    <!-- 4. Kontak -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">4</span> Data Kontak</h2>
+      <div class="form-grid">
+        <div class="form-group"><label for="namaKepsek">Nama Kepala Sekolah</label><input type="text" id="namaKepsek"
+            placeholder="Nama lengkap"></div>
+        <div class="form-group"><label for="hpKepsek">No. HP Kepala Sekolah <span class="req">*</span></label><input
+            type="tel" id="hpKepsek" placeholder="08xxxxxxxxxx"></div>
+        <div class="form-group"><label for="namaGuru">Nama Guru Pendamping</label><input type="text" id="namaGuru"
+            placeholder="Nama lengkap"></div>
+        <div class="form-group"><label for="hpGuru">No. HP Guru Pendamping</label><input type="tel" id="hpGuru"
+            placeholder="08xxxxxxxxxx"></div>
+      </div>
+    </section>
+
+    <!-- 5. Bantuan -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">5</span> Bantuan yang Sudah Masuk</h2>
+      <p class="card-desc">Catat semua bantuan yang pernah diterima madrasah.</p>
+      <div class="table-responsive">
+        <table id="bantuanTable">
+          <thead>
+            <tr>
+              <th>Tahun</th>
+              <th>Sumber</th>
+              <th>Jenis Bantuan</th>
+              <th>Nominal (Rp)</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="bantuanBody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn-outline btn-sm" id="addBantuanBtn">+ Tambah Bantuan</button>
+    </section>
+
+    <!-- 6. Kelengkapan -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">6</span> Kelengkapan Sekolah</h2>
+      <p class="card-desc">Centang fasilitas yang tersedia dan pilih kondisinya.</p>
+      <div id="kelengkapanList" class="facility-list"></div>
+    </section>
+
+    <!-- 7. Meubelair -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">7</span> Data Meubelair</h2>
+      <div class="table-responsive">
+        <table id="meubelairTable">
+          <thead>
+            <tr>
+              <th>Jenis</th>
+              <th>Baik</th>
+              <th>Rusak Ringan</th>
+              <th>Rusak Berat</th>
+            </tr>
+          </thead>
+          <tbody id="meubelairBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 8. Lembar Belakang -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">8</span> Lembar Belakang / Catatan</h2>
+      <div class="form-group full"><label for="lembarBelakang">Catatan Tambahan</label><textarea id="lembarBelakang"
+          rows="5" placeholder="Tulis catatan tambahan, keterangan kerusakan, kebutuhan mendesak, dll..."></textarea>
+      </div>
+      <div class="form-group full" style="margin-top:12px"><label for="kesimpulanSurveyor">Kesimpulan
+          Surveyor</label><textarea id="kesimpulanSurveyor" rows="3"
+          placeholder="Kesimpulan dan rekomendasi..."></textarea></div>
+      <div class="form-grid" style="margin-top:12px">
+        <div class="form-group"><label for="namaSurveyor">Nama Surveyor</label><input type="text" id="namaSurveyor"
+            placeholder="Nama lengkap surveyor"></div>
+        <div class="form-group"><label for="tanggalSurvei">Tanggal Survei</label><input type="date" id="tanggalSurvei">
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Foto -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">9</span> Dokumentasi Foto</h2>
+      <div class="photo-section" id="photoSections"></div>
+    </section>
+
+    <!-- 10. Koordinat -->
+    <section class="card">
+      <h2 class="card-title"><span class="step-badge">10</span> Titik Koordinat</h2>
+      <div class="form-grid">
+        <div class="form-group"><label for="latitude">Latitude</label><input type="text" id="latitude"
+            placeholder="-6.xxxxx" inputmode="decimal"></div>
+        <div class="form-group"><label for="longitude">Longitude</label><input type="text" id="longitude"
+            placeholder="106.xxxxx" inputmode="decimal"></div>
+      </div>
+      <button type="button" class="btn-primary btn-sm" id="getGPSBtn" style="margin-top:8px">📍 Ambil Koordinat
+        GPS</button>
+      <p class="gps-status" id="gpsStatus"></p>
+      <div id="mapContainer" class="map-container"></div>
+    </section>
+
+    <!-- EXPORT SECTION -->
+    <section class="card export-card">
+      <h2 class="card-title"><span class="step-badge">✓</span> Export & Simpan</h2>
+      <div class="export-actions">
+        <button type="button" class="btn-export btn-word" id="exportWordBtn">📄 Export Word</button>
+        <button type="button" class="btn-export btn-excel" id="exportExcelBtn">📊 Export Excel</button>
+        <button type="button" class="btn-primary" id="saveCloseBtn">💾 Simpan & Kembali</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.log('SW:', e));</script>
+</body>
+
+</html>
