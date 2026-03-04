@@ -125,6 +125,7 @@ function buildFacilities() {
 function buildMeubelair() {
   document.getElementById('meubelairBody').innerHTML = MEUBELAIR_ITEMS.map((item, i) => `
     <tr><td style="font-weight:600">${item}</td>
+    <td><input type="number" id="mbl-total-${i}" min="0" placeholder="0" inputmode="numeric"></td>
     <td><input type="number" id="mbl-baik-${i}" min="0" placeholder="0" inputmode="numeric"></td>
     <td><input type="number" id="mbl-rr-${i}" min="0" placeholder="0" inputmode="numeric"></td>
     <td><input type="number" id="mbl-rb-${i}" min="0" placeholder="0" inputmode="numeric"></td></tr>`).join('');
@@ -174,7 +175,7 @@ function createEmptySurvey(id) {
     id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     identitas: {}, lahan: {}, dataPokok: {}, kontak: {},
     bantuan: [], kelengkapan: {},
-    meubelair: MEUBELAIR_ITEMS.map(j => ({ jenis: j, baik: 0, rusakRingan: 0, rusakBerat: 0 })),
+    meubelair: MEUBELAIR_ITEMS.map(j => ({ jenis: j, total: 0, baik: 0, rusakRingan: 0, rusakBerat: 0 })),
     lembarBelakang: '', kesimpulanSurveyor: '', namaSurveyor: '', tanggalSurvei: '',
     fotos: { gedungDepan: [], gedungSamping: [], gedungBelakang: [], papanNama: [], kerusakan: [] },
     koordinat: { latitude: '', longitude: '' }
@@ -227,9 +228,7 @@ function collectFormData() {
     const chk = document.getElementById('fac-chk-' + f.key);
     d.kelengkapan[f.key] = { ada: chk.checked, kondisi: document.getElementById('fac-kon-' + f.key)?.value || '', jumlah: f.hasCount ? (parseInt(document.getElementById('fac-cnt-' + f.key)?.value) || 0) : null };
   });
-
-  d.meubelair = MEUBELAIR_ITEMS.map((item, i) => ({ jenis: item, baik: parseInt(document.getElementById('mbl-baik-' + i)?.value) || 0, rusakRingan: parseInt(document.getElementById('mbl-rr-' + i)?.value) || 0, rusakBerat: parseInt(document.getElementById('mbl-rb-' + i)?.value) || 0 }));
-
+  d.meubelair = MEUBELAIR_ITEMS.map((item, i) => ({ jenis: item, total: parseInt(document.getElementById('mbl-total-' + i)?.value) || 0, baik: parseInt(document.getElementById('mbl-baik-' + i)?.value) || 0, rusakRingan: parseInt(document.getElementById('mbl-rr-' + i)?.value) || 0, rusakBerat: parseInt(document.getElementById('mbl-rb-' + i)?.value) || 0 }));
   d.lembarBelakang = gv('lembarBelakang');
   d.kesimpulanSurveyor = gv('kesimpulanSurveyor');
   d.namaSurveyor = gv('namaSurveyor');
@@ -276,7 +275,7 @@ function populateForm(d) {
     }
   });
 
-  (d.meubelair || []).forEach((m, i) => { sv('mbl-baik-' + i, m.baik); sv('mbl-rr-' + i, m.rusakRingan); sv('mbl-rb-' + i, m.rusakBerat); });
+  (d.meubelair || []).forEach((m, i) => { sv('mbl-total-' + i, m.total); sv('mbl-baik-' + i, m.baik); sv('mbl-rr-' + i, m.rusakRingan); sv('mbl-rb-' + i, m.rusakBerat); });
 
   sv('lembarBelakang', d.lembarBelakang); sv('kesimpulanSurveyor', d.kesimpulanSurveyor);
   sv('namaSurveyor', d.namaSurveyor); sv('tanggalSurvei', d.tanggalSurvei);
@@ -418,8 +417,8 @@ async function exportWord() {
 
     // G. Meubelair
     ch.push(new Paragraph({ text: 'G. DATA MEUBELAIR', heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 100 } }));
-    const mRows = [new TableRow({ children: [hc('No'), hc('Jenis'), hc('Baik'), hc('Rusak Ringan'), hc('Rusak Berat'), hc('Total')] })];
-    (d.meubelair || []).forEach((m, i) => { const t = (m.baik || 0) + (m.rusakRingan || 0) + (m.rusakBerat || 0); mRows.push(new TableRow({ children: [c(i + 1), c(m.jenis), c(m.baik), c(m.rusakRingan), c(m.rusakBerat), c(t)] })); });
+    const mRows = [new TableRow({ children: [hc('No'), hc('Jenis'), hc('Total'), hc('Baik'), hc('Rusak Ringan'), hc('Rusak Berat')] })];
+    (d.meubelair || []).forEach((m, i) => { const t = m.total ?? ((m.baik || 0) + (m.rusakRingan || 0) + (m.rusakBerat || 0)); mRows.push(new TableRow({ children: [c(i + 1), c(m.jenis), c(t), c(m.baik), c(m.rusakRingan), c(m.rusakBerat)] })); });
     ch.push(new Table({ rows: mRows, width: { size: 100, type: WidthType.PERCENTAGE } }));
 
     // H. Catatan
@@ -545,15 +544,14 @@ async function exportExcel() {
         r.eachCell(c => { c.border = bdr(); c.alignment = { vertical: 'middle' }; });
       });
     }
-
     // Sheet 3: Meubelair
     const ws3 = wb.addWorksheet('Meubelair');
     ws3.columns = [{ width: 6 }, { width: 20 }, { width: 12 }, { width: 14 }, { width: 14 }, { width: 10 }];
-    const mhRow = ws3.addRow(['No', 'Jenis', 'Baik', 'Rusak Ringan', 'Rusak Berat', 'Total']);
+    const mhRow = ws3.addRow(['No', 'Jenis', 'Total', 'Baik', 'Rusak Ringan', 'Rusak Berat']);
     mhRow.eachCell(c => { c.font = hStyle.font; c.fill = hStyle.fill; c.border = bdr(); c.alignment = { vertical: 'middle' }; });
     (d.meubelair || []).forEach((m, i) => {
-      const t = (m.baik || 0) + (m.rusakRingan || 0) + (m.rusakBerat || 0);
-      const r = ws3.addRow([i + 1, m.jenis, m.baik, m.rusakRingan, m.rusakBerat, t]);
+      const t = m.total ?? ((m.baik || 0) + (m.rusakRingan || 0) + (m.rusakBerat || 0));
+      const r = ws3.addRow([i + 1, m.jenis, t, m.baik, m.rusakRingan, m.rusakBerat]);
       r.eachCell(c => { c.border = bdr(); c.alignment = { vertical: 'middle' }; });
     });
 

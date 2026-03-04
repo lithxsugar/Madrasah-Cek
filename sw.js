@@ -1,4 +1,4 @@
-const CACHE_NAME = 'survei-madrasah-v2';
+const CACHE_NAME = 'survei-madrasah-v3';
 const ASSETS = [
     './',
     './index.html',
